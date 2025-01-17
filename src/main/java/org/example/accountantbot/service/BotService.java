@@ -18,6 +18,7 @@ public class BotService {
         }
         return SendMessage.builder()
                 .chatId(chatId)
+                .parseMode("Markdown")
                 .text(assistant.accountantsHelp(message, chatId))
                 .build();
     }
