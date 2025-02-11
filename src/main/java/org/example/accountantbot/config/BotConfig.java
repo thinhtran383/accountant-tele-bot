@@ -13,6 +13,9 @@ import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsume
 import org.telegram.telegrambots.longpolling.starter.AfterBotRegistration;
 import org.telegram.telegrambots.longpolling.starter.SpringLongPollingBot;
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
+import org.telegram.telegrambots.meta.api.methods.ActionType;
+import org.telegram.telegrambots.meta.api.methods.send.SendChatAction;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
@@ -22,7 +25,6 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 @Slf4j
 public class BotConfig implements SpringLongPollingBot, LongPollingSingleThreadUpdateConsumer {
 
- 
 
     @Value("${telegrambots.bot.token}")
     private String token;
@@ -33,7 +35,6 @@ public class BotConfig implements SpringLongPollingBot, LongPollingSingleThreadU
     TelegramClient telegramClient() {
         return new OkHttpTelegramClient(getBotToken());
     }
-
 
 
     @Override
@@ -51,14 +52,38 @@ public class BotConfig implements SpringLongPollingBot, LongPollingSingleThreadU
         if (update.hasMessage() && update.getMessage().hasText()) {
             String messageText = update.getMessage().getText();
             long chatId = update.getMessage().getChatId();
-            
+            int messageId = update.getMessage().getMessageId();
+
             log.info("Received message: {} from chatId: {}", messageText, chatId);
+            log.info("Received message id: {}", messageId);
+
+            SendChatAction sendChatAction = SendChatAction.builder()
+                    .chatId(chatId)
+                    .action(ActionType.TYPING.toString())
+                    .build();
 
             try {
-                telegramClient().execute(botService.processMessage(messageText, chatId));
+                telegramClient().execute(botService.processMessage(messageText, chatId, messageId));
             } catch (TelegramApiException e) {
                 throw new RuntimeException(e);
             }
+//        } else if (update.hasCallbackQuery()) {
+//            String callbackData = update.getCallbackQuery().getData();
+//            long chatId = update.getCallbackQuery().getMessage().getChatId();
+//
+//            log.info("Received callback data: {} from chatId: {}", callbackData, chatId);
+//
+//            if (callbackData.equals("update_msg_text")) {
+//                try {
+//                    telegramClient().execute(SendMessage.builder()
+//                            .chatId(chatId)
+//                            .text("Updated message text")
+//                            .build()
+//                    );
+//                } catch (TelegramApiException e) {
+//                    throw new RuntimeException(e);
+//                }
+//            }
         }
     }
 
